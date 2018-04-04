@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
+      <title>Gizmo Visualizer</title>
         <meta charset="utf-8">
 
         <style>
@@ -34,6 +35,7 @@
         </style>
     </head>
     <body>
+      <h1>Gizmo Visualizer</h1>
         <div class="graph"></div>
 
         <script src="http://d3js.org/d3.v3.min.js"></script>
@@ -42,27 +44,13 @@
             duration = 750,
             now = new Date(Date.now() - duration)
 
-        var width = 500,
-            height = 200
+        var width = 700,
+            height = 500
 
         var groups = {
             current: {
                 value: 0,
                 color: 'orange',
-                data: d3.range(limit).map(function() {
-                    return 0
-                })
-            },
-            target: {
-                value: 0,
-                color: 'green',
-                data: d3.range(limit).map(function() {
-                    return 0
-                })
-            },
-            output: {
-                value: 0,
-                color: 'grey',
                 data: d3.range(limit).map(function() {
                     return 0
                 })
