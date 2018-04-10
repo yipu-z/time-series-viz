@@ -71,13 +71,13 @@
         </button>
         </div>
         <div class="modal-body">
-          <select class="" name="">
+          <select id="subjectSelect" name="subjectSelect">
             <option value="" default readonly>Select...</option>
           </select>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-primary">Save</button>
+          <button type="submit" id="select" class="btn btn-primary">Select</button>
         </div>
       </div>
     </div>
@@ -98,12 +98,14 @@
     };
     firebase.initializeApp(config);
 
+    //LOGIN(gmail)
     function login() {
       function newLoginHappened(user) {
         if (user) {
-          //User is signed in
-          app(user);
+          //User is signed in, show name
+          displayName(user);
         } else {
+          //Request credentials
           var provider = new firebase.auth.GoogleAuthProvider();
           firebase.auth().signInWithRedirect(provider);
         }
@@ -111,115 +113,112 @@
       firebase.auth().onAuthStateChanged(newLoginHappened);
     }
 
-    function app(user) {
+    function displayName(user) {
       $('#user').html('Logged in as ' + user.displayName);
     }
-
     window.onload= login;
 
+    //READ FROM DATABASE
     var firebaseSubjectRef = firebase.database().ref();
     firebaseSubjectRef.on('value', function(datasnapshot){
-      console.log(Object.keys(datasnapshot.val()));
+      for (var i = 0; i < Object.keys(datasnapshot.val()).length; i++) {
+        //Add each entry to subject selection
+        var subjectId = Object.keys(datasnapshot.val())[i];
+        $('#subjectSelect').append('<option value="'+subjectId+'">'+subjectId+'</option>');
+      }
     });
-
-
-
     //Initialize bootstrap modal
     $('#subjectModal').on('shown.bs.modal', function() {
-      //$('#myInput').trigger('focus')
+      $('#myInput').trigger('focus');
     })
+    //Upon selection, store the selected user data on a variable
+    $('#select').click(function(event) {
+      var selectedSubject = $('#subjectSelect').val();
+      var selectedSubjectRef = firebase.database().ref().child(selectedSubject);
+      selectedSubjectRef.on('value', function(datasnapshot){
+        var selectedSubjectData = datasnapshot.val();
 
-    var gsrData = [1, 2, 3, 4, 5, 6, 7, 8, 3, 4, 5, 6, 7, 3, 4, 3, 345, 2342, 345, 345, 345, 345, 345, 3453];
+        //HERE IS WHERE WE MANIPULATE THE DATA!!!!
+        console.log(selectedSubjectData);
+      });
+    });
 
-    var limit = 30 * 1,
-      duration = 700,
-      now = new Date(Date.now() - duration)
+    //D3 STUFFS TODO: show number every second in time line. Prevent values to go outside chart. Show y axis scale.
 
-    //Define canvas size
-    var width = 700,
-      height = 500
-
-    var groups = {
-      gsrData: {
-        value: 0,
-        color: 'orange',
-        data: [2, 3, 5, 3, 4, 5, 6, 3, 23, 2434]
-      }
-    }
-
-    var x = d3.time.scale.utc()
-      .domain([now - (limit - 2), now - duration])
-      .range([0, width])
-
-    var y = d3.scale.linear()
-      .domain([-20, 100])
-      .range([height, 0])
-
-    var line = d3.svg.line()
-      .interpolate('basis')
-      .x(function(d, i) {
-        return x(now - (limit - 1 - i) * duration)
-      })
-      .y(function(d) {
-        return y(d)
-      })
-
-    var svg = d3.select('.graph').append('svg')
-      .attr('class', 'chart')
-      .attr('width', width)
-      .attr('height', height + 50)
-
-    var axis = svg.append('g')
-      .attr('class', 'x axis')
-      .attr('transform', 'translate(0,' + height + ')')
-      .call(x.axis = d3.svg.axis().scale(x).orient('bottom'))
-
-    var paths = svg.append('g')
-
-    for (var name in groups) {
-      var group = groups[name]
-      group.path = paths.append('path')
-        .data([group.data])
-        .attr('class', name + ' group')
-        .style('stroke', group.color)
-    }
-
-    function tick() {
-      now = new Date()
-
-      // Add new values
-      for (var name in groups) {
-        var group = groups[name]
-        //group.data.push(group.value) // Real values arrive at irregular intervals
-        group.data.push(20 + Math.random() * 100)
-        group.path.attr('d', line)
-      }
-
-      // Shift domain
-      x.domain([now - (limit - 2) * duration, now - duration])
-
-      // Slide x-axis left
-      axis.transition()
-        .duration(duration)
-        .ease('linear')
-        .call(x.axis)
-
-      // Slide paths left
-      paths.attr('transform', null)
-        .transition()
-        .duration(duration)
-        .ease('linear')
-        .attr('transform', 'translate(' + x(now - (limit - 1) * duration) + ')')
-        .each('end', tick)
-
-      // Remove oldest data point from each group
-      for (var name in groups) {
-        var group = groups[name]
-        group.data.shift()
-      }
-    }
-
-    tick()
+    var limit = 60 * 1,
+           duration = 750,
+           now = new Date(Date.now() - duration)
+       var width = 500,
+           height = 200
+       var groups = {
+           current: {
+               value: 0,
+               color: 'orange',
+               data: d3.range(limit).map(function() {
+                   return 0
+               })
+           }
+       }
+       var x = d3.time.scale()
+           .domain([now - (limit - 2), now - duration])
+           .range([0, width])
+       var y = d3.scale.linear()
+           .domain([0, 100])
+           .range([height, 0])
+       var line = d3.svg.line()
+           .interpolate('basis')
+           .x(function(d, i) {
+               return x(now - (limit - 1 - i) * duration)
+           })
+           .y(function(d) {
+               return y(d)
+           })
+       var svg = d3.select('.graph').append('svg')
+           .attr('class', 'chart')
+           .attr('width', width)
+           .attr('height', height + 50)
+       var axis = svg.append('g')
+           .attr('class', 'x axis')
+           .attr('transform', 'translate(0,' + height + ')')
+           .call(x.axis = d3.svg.axis().scale(x).orient('bottom'))
+       var paths = svg.append('g')
+       for (var name in groups) {
+           var group = groups[name]
+           group.path = paths.append('path')
+               .data([group.data])
+               .attr('class', name + ' group')
+               .style('stroke', group.color)
+       }
+       function tick() {
+       now = new Date()
+           // Add new values
+           for (var name in groups) {
+               var group = groups[name]
+               //group.data.push(group.value) // Real values arrive at irregular intervals
+               group.data.push(20 + Math.random() * 100)
+               group.path.attr('d', line)
+           }
+           // Shift domain
+           x.domain([now - (limit - 2) * duration, now - duration])
+           // Slide x-axis left
+           axis.transition()
+               .duration(duration)
+               .ease('linear')
+               .call(x.axis)
+           // Slide paths left
+           paths.attr('transform', null)
+               .transition()
+               .duration(duration)
+               .ease('linear')
+               .attr('transform', 'translate(' + x(now - (limit - 1) * duration) + ')')
+               .each('end', tick)
+           // Remove oldest data point from each group
+           for (var name in groups) {
+               var group = groups[name]
+               group.data.shift()
+           }
+       }
+       tick()
   </script>
 </body>
 
