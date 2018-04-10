@@ -1,10 +1,12 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
   <title>Gizmo Visualizer</title>
   <meta charset="utf-8">
-  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <script src="https://www.gstatic.com/firebasejs/4.12.0/firebase.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
   <style>
     .graph .axis {
       stroke-width: 1;
@@ -33,16 +35,107 @@
 </head>
 
 <body>
-  <h1>Gizmo Visualizer</h1>
-  <div class="graph"></div>
+  <div class="container">
+    <div class="row">
+      <div class="col-sm-12">
+        <h5 id="user"></h5>
+        <div id="test" class="">
 
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-sm-12">
+        <h1>Gizmo Visualizer</h1>
+        <div class="graph"></div>
+      </div>
+    </div>
+     <div class="row">
+      <div class="col-sm-12">
+        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#subjectSelectionModal">
+        Select Subject Data
+      </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Modal -->
+  <div class="modal fade" id="subjectSelectionModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="subjectModalTitle">Select Subject</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        </div>
+        <div class="modal-body">
+          <select class="" name="">
+            <option value="" default readonly>Select...</option>
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
   <script src="http://d3js.org/d3.v3.min.js"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" charset="utf-8"></script>
+  <script src="https://www.gstatic.com/firebasejs/4.12.0/firebase-auth.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
   <script>
+    // Initialize Firebase
+    var config = {
+      apiKey: "AIzaSyAsp1Xn7i2xwWIoyR8RjMHDez5q0_MDPtw",
+      authDomain: "gizmo-database.firebaseapp.com",
+      databaseURL: "https://gizmo-database.firebaseio.com",
+      projectId: "gizmo-database",
+      storageBucket: "gizmo-database.appspot.com",
+      messagingSenderId: "1099422978824"
+    };
+    firebase.initializeApp(config);
+
+    function login() {
+      function newLoginHappened(user) {
+        if (user) {
+          //User is signed in
+          app(user);
+        } else {
+          var provider = new firebase.auth.GoogleAuthProvider();
+          firebase.auth().signInWithRedirect(provider);
+        }
+      }
+      firebase.auth().onAuthStateChanged(newLoginHappened);
+    }
+
+    function app(user) {
+      $('#user').html('Logged in as ' + user.displayName);
+    }
+
+    window.onload= login;
+
+    var firebaseSubjectRef = firebase.database().ref();
+    firebaseSubjectRef.on('value', function(datasnapshot){
+      console.log(Object.keys(datasnapshot.val()));
+    });
+
+
+
+    //Initialize bootstrap modal
+    $('#subjectModal').on('shown.bs.modal', function() {
+      //$('#myInput').trigger('focus')
+    })
+
+    var gsrData = [1, 2, 3, 4, 5, 6, 7, 8, 3, 4, 5, 6, 7, 3, 4, 3, 345, 2342, 345, 345, 345, 345, 345, 3453];
+
     var limit = 30 * 1,
-      duration = 750,
+      duration = 700,
       now = new Date(Date.now() - duration)
 
+    //Define canvas size
     var width = 700,
       height = 500
 
@@ -50,18 +143,16 @@
       gsrData: {
         value: 0,
         color: 'orange',
-        data: d3.range(limit).map(function() {
-          return 0
-        })
+        data: [2, 3, 5, 3, 4, 5, 6, 3, 23, 2434]
       }
     }
 
-    var x = d3.time.scale()
+    var x = d3.time.scale.utc()
       .domain([now - (limit - 2), now - duration])
       .range([0, width])
 
     var y = d3.scale.linear()
-      .domain([-20, 30])
+      .domain([-20, 100])
       .range([height, 0])
 
     var line = d3.svg.line()
