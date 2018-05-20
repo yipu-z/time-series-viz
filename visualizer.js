@@ -58,15 +58,14 @@ function logOut() {
 // Read from database
 // =============================================================================
 function initializeSelection(){
-  console.log('here');
   var firebaseSubjectRef = firebase.database().ref();
   firebaseSubjectRef.on('value', function(datasnapshot) {
     console.log('here');
-    for (var i = 0; i < Object.keys(datasnapshot.val()).length; i++) {
-      //Add each entry to subject selection
-      var subjectId = Object.keys(datasnapshot.val())[i];
-      $('#subjectSelect').append('<option value="' + subjectId + '">' + subjectId + '</option>');
-    }
+    // for (var i = 0; i < Object.keys(datasnapshot.val()).length; i++) {
+    //   //Add each entry to subject selection
+    //   var subjectId = Object.keys(datasnapshot.val())[i];
+    //   $('#subjectSelect').append('<option value="' + subjectId + '">' + subjectId + '</option>');
+    // }
   });
 }
 
