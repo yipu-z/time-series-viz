@@ -58,7 +58,7 @@ function logOut() {
 // Read from database
 // =============================================================================
 function initializeSelection(){
-  var firebaseSubjectRef = firebase.database().ref();
+  var firebaseSubjectRef = firebase.database().ref('edits');
   firebaseSubjectRef.on('value', function(datasnapshot) {
     console.log('here');
     // for (var i = 0; i < Object.keys(datasnapshot.val()).length; i++) {
