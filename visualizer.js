@@ -24,13 +24,28 @@ var config = {
 firebase.initializeApp(config);
 
 // =============================================================================
+// Read data from DB
+// =============================================================================
+function initializeSelection(){
+  var firebaseSubjectRef = firebase.database().ref();
+  firebaseSubjectRef.on('value', function(datasnapshot) {
+    for (var i = 0; i < Object.keys(datasnapshot.val()).length; i++) {
+      //Add each entry to subject selection
+      var subjectId = Object.keys(datasnapshot.val())[i];
+      $('#subjectSelect').append('<option value="' + subjectId + '">' + subjectId + '</option>');
+    }
+  });
+}
+
+// =============================================================================
 // Login (GMAIL)
 // =============================================================================
 function login() {
   function newLoginHappened(user) {
     if (user) {
       //User is signed in, show name
-      displayName(user);
+      $('#user').html('Logged in as ' + user.displayName);
+      initializeSelection();
     } else {
       //Request credentials
       var provider = new firebase.auth.GoogleAuthProvider();
@@ -40,10 +55,9 @@ function login() {
   firebase.auth().onAuthStateChanged(newLoginHappened);
 }
 
-function displayName(user) {
-  $('#user').html('Logged in as ' + user.displayName);
-}
-window.onload = login;
+window.onload = function(){
+  login();
+};
 
 //Logout
 function logOut() {
@@ -54,28 +68,16 @@ function logOut() {
   });
 }
 
-// =============================================================================
-// Read from database
-// =============================================================================
-function initializeSelection(){
-  var firebaseSubjectRef = firebase.database().ref('edits');
-  firebaseSubjectRef.on('value', function(datasnapshot) {
-    console.log('here');
-    // for (var i = 0; i < Object.keys(datasnapshot.val()).length; i++) {
-    //   //Add each entry to subject selection
-    //   var subjectId = Object.keys(datasnapshot.val())[i];
-    //   $('#subjectSelect').append('<option value="' + subjectId + '">' + subjectId + '</option>');
-    // }
-  });
-}
-
 
 //Initialize bootstrap modal
 $('#subjectModal').on('shown.bs.modal', function() {
   $('#myInput').trigger('focus');
 });
 
+// =============================================================================
 //Upon subject selection, store the selected user data on a variable
+// =============================================================================
+
 $('#select').click(function(event) {
   var selectedSubject = $('#subjectSelect').val();
   subjectId = selectedSubject;
