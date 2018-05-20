@@ -68,8 +68,6 @@ function initializeSelection(){
   });
 }
 
-initializeSelection();
-
 //Initialize bootstrap modal
 $('#subjectModal').on('shown.bs.modal', function() {
   $('#myInput').trigger('focus');
