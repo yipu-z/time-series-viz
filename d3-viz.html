@@ -6,7 +6,6 @@
   <meta charset="utf-8">
   <script src="https://www.gstatic.com/firebasejs/4.12.0/firebase.js"></script>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
   <style>
     .graph .axis {
       stroke-width: 1;
@@ -35,191 +34,128 @@
 </head>
 
 <body>
+  <nav class="navbar navbar-inverse">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="#">Gizmo Visualizer</a>
+      </div>
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href="#"><span class="glyphicon glyphicon-log-in"  onclick="logOut()"></span> Logout</a></li>
+      </ul>
+    </div>
+  </nav>
   <div class="container">
     <div class="row">
-      <div class="col-sm-12">
-        <h5 id="user"></h5>
-        <div id="test" class="">
-
+      <div class="col-sm-12" style="display:none" id="validation">
+        <div class="alert alert-danger">
+          <strong>Video Id and Gsr data Id don't match!</strong>
+        </div>
+      </div>
+      <div class="col-sm-6">
+        <div style="display:none" id="subjectId" class="alert alert-info">
+          Current Database Subject: <strong></strong><br>
+        </div>
+      </div>
+      <div class="col-sm-6">
+        <div style="display:none" id="videoId" class="alert alert-warning">
+          Current Subject Video: <strong></strong>
         </div>
       </div>
     </div>
     <div class="row">
-      <div class="col-sm-12">
-        <h1>Gizmo Visualizer</h1>
-        <div class="graph"></div>
+      <div class="col-sm-5">
+        <div class="col-sm-6">
+          <div id="currentTimestamp" class="alert alert-success" role="alert">
+            Current timestamp: <strong></strong><br>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div id="subjectMarkers" class="alert alert-info">
+            Total Number of Markers: <strong></strong><br>
+          </div>
+        </div>
       </div>
-    </div>
-     <div class="row">
-      <div class="col-sm-12">
+      <div class="col-sm-7">
         <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#subjectSelectionModal">
-        Select Subject Data
-      </button>
+              Select Subject Data
+        </button>
+        <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#subjectVideoModal">
+                Select Subject Video
+        </button>
+        <button type="button" class="btn btn-success pull-right" data-toggle="modal" onclick="saveData()">
+              Save changes
+        </button>
       </div>
     </div>
-  </div>
-
-
-  <!-- Modal -->
-  <div class="modal fade" id="subjectSelectionModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="subjectModalTitle">Select Subject</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+    <div class="row">
+      <div class="col-sm-5">
+        <div id="chartContainer" style="height: 300px; width: 100%;"></div>
+        <button type="button" id="addMarker" style="display: none" class="btn btn-warning" data-toggle="modal" onclick="addMarker()">
+            Create New Marker
+            </button>
+      </div>
+      <div class="col-sm-7 panel panel-default">
+        <div align="center" style="height: 300px; width: 100%;" class="embed-responsive embed-responsive-16by9">
+          <video class="embed-responsive-item" id="subjectVideo">
+          </video>
+        </div>
+      </div>
+    </div>
+    <!-- Subject selection Modal -->
+    <div class="modal fade" id="subjectSelectionModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title" id="subjectModalTitle">Select Subject</h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
-        </div>
-        <div class="modal-body">
-          <select id="subjectSelect" name="subjectSelect">
+          </div>
+          <div class="modal-body">
+            <select id="subjectSelect" name="subjectSelect">
             <option value="" default readonly>Select...</option>
           </select>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="submit" id="select" class="btn btn-primary" data-dismiss="modal">Select</button>
+          </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          <button type="submit" id="select" class="btn btn-primary">Select</button>
+      </div>
+    </div>
+    <!-- Subject Video Modal -->
+    <div class="modal fade" id="subjectVideoModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title" id="videoModalTitle">Select Video</h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+          </div>
+          <div class="modal-body">
+            <form class="" id="videoForm">
+              <div class="form-group">
+                <label for="exampleInputFile">File input</label>
+                <input type="file" accept="video/*" class="form-control-file" id="videoInputFile" aria-describedby="fileHelp">
+                <small id="fileHelp" class="form-text text-muted">Please select a video file...</small>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="submit" id="videoSelect" class="btn btn-primary" data-dismiss="modal" onclick="initializeVideo()">Select</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
   <script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
   <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/4.12.0/firebase-auth.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-  <script>
-    // Initialize Firebase
-    var config = {
-      apiKey: "AIzaSyAsp1Xn7i2xwWIoyR8RjMHDez5q0_MDPtw",
-      authDomain: "gizmo-database.firebaseapp.com",
-      databaseURL: "https://gizmo-database.firebaseio.com",
-      projectId: "gizmo-database",
-      storageBucket: "gizmo-database.appspot.com",
-      messagingSenderId: "1099422978824"
-    };
-    firebase.initializeApp(config);
-
-    //LOGIN(gmail)
-    function login() {
-      function newLoginHappened(user) {
-        if (user) {
-          //User is signed in, show name
-          displayName(user);
-        } else {
-          //Request credentials
-          var provider = new firebase.auth.GoogleAuthProvider();
-          firebase.auth().signInWithRedirect(provider);
-        }
-      }
-      firebase.auth().onAuthStateChanged(newLoginHappened);
-    }
-
-    function displayName(user) {
-      $('#user').html('Logged in as ' + user.displayName);
-    }
-    window.onload= login;
-
-    //READ FROM DATABASE
-    var firebaseSubjectRef = firebase.database().ref();
-    firebaseSubjectRef.on('value', function(datasnapshot){
-      for (var i = 0; i < Object.keys(datasnapshot.val()).length; i++) {
-        //Add each entry to subject selection
-        var subjectId = Object.keys(datasnapshot.val())[i];
-        $('#subjectSelect').append('<option value="'+subjectId+'">'+subjectId+'</option>');
-      }
-    });
-    //Initialize bootstrap modal
-    $('#subjectModal').on('shown.bs.modal', function() {
-      $('#myInput').trigger('focus');
-    })
-    //Upon selection, store the selected user data on a variable
-    $('#select').click(function(event) {
-      var selectedSubject = $('#subjectSelect').val();
-      var selectedSubjectRef = firebase.database().ref().child(selectedSubject);
-      selectedSubjectRef.on('value', function(datasnapshot){
-        var selectedSubjectData = datasnapshot.val();
-
-        //HERE IS WHERE WE MANIPULATE THE DATA!!!!
-        console.log(selectedSubjectData);
-      });
-    });
-
-    //D3 STUFFS TODO: show number every second in time line. Prevent values to go outside chart. Show y axis scale.
-
-    var limit = 60 * 1,
-           duration = 750,
-           now = new Date(Date.now() - duration)
-       var width = 500,
-           height = 200
-       var groups = {
-           current: {
-               value: 0,
-               color: 'orange',
-               data: d3.range(limit).map(function() {
-                   return 0
-               })
-           }
-       }
-       var x = d3.time.scale()
-           .domain([now - (limit - 2), now - duration])
-           .range([0, width])
-       var y = d3.scale.linear()
-           .domain([0, 100])
-           .range([height, 0])
-       var line = d3.svg.line()
-           .interpolate('basis')
-           .x(function(d, i) {
-               return x(now - (limit - 1 - i) * duration)
-           })
-           .y(function(d) {
-               return y(d)
-           })
-       var svg = d3.select('.graph').append('svg')
-           .attr('class', 'chart')
-           .attr('width', width)
-           .attr('height', height + 50)
-       var axis = svg.append('g')
-           .attr('class', 'x axis')
-           .attr('transform', 'translate(0,' + height + ')')
-           .call(x.axis = d3.svg.axis().scale(x).orient('bottom'))
-       var paths = svg.append('g')
-       for (var name in groups) {
-           var group = groups[name]
-           group.path = paths.append('path')
-               .data([group.data])
-               .attr('class', name + ' group')
-               .style('stroke', group.color)
-       }
-       function tick() {
-       now = new Date()
-           // Add new values
-           for (var name in groups) {
-               var group = groups[name]
-               //group.data.push(group.value) // Real values arrive at irregular intervals
-               group.data.push(20 + Math.random() * 100)
-               group.path.attr('d', line)
-           }
-           // Shift domain
-           x.domain([now - (limit - 2) * duration, now - duration])
-           // Slide x-axis left
-           axis.transition()
-               .duration(duration)
-               .ease('linear')
-               .call(x.axis)
-           // Slide paths left
-           paths.attr('transform', null)
-               .transition()
-               .duration(duration)
-               .ease('linear')
-               .attr('transform', 'translate(' + x(now - (limit - 1) * duration) + ')')
-               .each('end', tick)
-           // Remove oldest data point from each group
-           for (var name in groups) {
-               var group = groups[name]
-               group.data.shift()
-           }
-       }
-       tick()
-  </script>
+  <script src="visualizer.js" charset="utf-8"></script>
 </body>
 
 </html>
