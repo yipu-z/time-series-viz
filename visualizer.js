@@ -1,6 +1,6 @@
-window.onload = function(){
+window.onload = function() {
+  firebase.initializeApp(config);
   login();
-  initializeSelection();
 };
 
 //GLOBAL VARIABLES
@@ -26,7 +26,7 @@ var config = {
   storageBucket: "gizmo-database.appspot.com",
   messagingSenderId: "1099422978824"
 };
-firebase.initializeApp(config);
+
 
 // =============================================================================
 // Login (GMAIL)
@@ -62,16 +62,14 @@ function logOut() {
 // =============================================================================
 // Read from database
 // =============================================================================
-  function initializeSelection(){
-    var firebaseSubjectRef = firebase.database().ref();
-    firebaseSubjectRef.on('value', function(datasnapshot) {
-      for (var i = 0; i < Object.keys(datasnapshot.val()).length; i++) {
-        //Add each entry to subject selection
-        var subjectId = Object.keys(datasnapshot.val())[i];
-        $('#subjectSelect').append('<option value="' + subjectId + '">' + subjectId + '</option>');
-      }
-    });
+var firebaseSubjectRef = firebase.database().ref();
+firebaseSubjectRef.on('value', function(datasnapshot) {
+  for (var i = 0; i < Object.keys(datasnapshot.val()).length; i++) {
+    //Add each entry to subject selection
+    var subjectId = Object.keys(datasnapshot.val())[i];
+    $('#subjectSelect').append('<option value="' + subjectId + '">' + subjectId + '</option>');
   }
+});
 
 //Initialize bootstrap modal
 $('#subjectModal').on('shown.bs.modal', function() {
@@ -134,12 +132,16 @@ $('#select').click(function(event) {
 // =============================================================================
 // Write to database
 // =============================================================================
-function saveData(){
-  var subjectData={gsrData: gsrData, initialTimestamp: rawInitialTimestamp, userMarkers: processedMarkers};
+function saveData() {
+  var subjectData = {
+    gsrData: gsrData,
+    initialTimestamp: rawInitialTimestamp,
+    userMarkers: processedMarkers
+  };
   if (confirm('Are you sure you want to save the data?')) {
-    firebase.database().ref('edits/'+subjectId).set(subjectData);
+    firebase.database().ref('edits/' + subjectId).set(subjectData);
     location.reload();
-  }else {
+  } else {
     console.log('canceled');
   }
 
@@ -226,12 +228,12 @@ function startGsrChart(gsrData, timestamps, markers, currentVideoTime) {
       //Initialize object to store each data point.
       var datapoint = {};
       datapoint.y = null;
-      datapoint.x = new Date((currentVideoTime - (datapointsSize * 250))+(i*250));
+      datapoint.x = new Date((currentVideoTime - (datapointsSize * 250)) + (i * 250));
       //Add default values to datapoints
       datapoint.cursor = 'pointer';
       datapoint.originalTimestamp = currentTimestamp - 250;
       dps.push(datapoint);
-      if (i==datapointsSize-1) {
+      if (i == datapointsSize - 1) {
         chart.render();
       }
     }
