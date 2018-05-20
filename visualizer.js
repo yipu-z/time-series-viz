@@ -1,3 +1,8 @@
+window.onload = function(){
+  login();
+  initializeSelection();
+};
+
 //GLOBAL VARIABLES
 var rawInitialTimestamp; // First Timestamp as it comes from db
 var processedInitialTimestamp; //First Timestamp converted to desired format
@@ -26,6 +31,7 @@ firebase.initializeApp(config);
 // =============================================================================
 // Login (GMAIL)
 // =============================================================================
+
 function login() {
   function newLoginHappened(user) {
     if (user) {
@@ -43,7 +49,6 @@ function login() {
 function displayName(user) {
   $('#user').html('Logged in as ' + user.displayName);
 }
-window.onload = login;
 
 //Logout
 function logOut() {
@@ -57,15 +62,16 @@ function logOut() {
 // =============================================================================
 // Read from database
 // =============================================================================
-  var firebaseSubjectRef = firebase.database().ref();
-  firebaseSubjectRef.on('value', function(datasnapshot) {
-    for (var i = 0; i < Object.keys(datasnapshot.val()).length; i++) {
-      //Add each entry to subject selection
-      var subjectId = Object.keys(datasnapshot.val())[i];
-      $('#subjectSelect').append('<option value="' + subjectId + '">' + subjectId + '</option>');
-    }
-  });
-
+  function initializeSelection(){
+    var firebaseSubjectRef = firebase.database().ref();
+    firebaseSubjectRef.on('value', function(datasnapshot) {
+      for (var i = 0; i < Object.keys(datasnapshot.val()).length; i++) {
+        //Add each entry to subject selection
+        var subjectId = Object.keys(datasnapshot.val())[i];
+        $('#subjectSelect').append('<option value="' + subjectId + '">' + subjectId + '</option>');
+      }
+    });
+  }
 
 //Initialize bootstrap modal
 $('#subjectModal').on('shown.bs.modal', function() {
