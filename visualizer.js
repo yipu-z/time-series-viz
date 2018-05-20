@@ -57,7 +57,6 @@ function logOut() {
 // =============================================================================
 // Read from database
 // =============================================================================
-function initializeSelection(){
   var firebaseSubjectRef = firebase.database().ref();
   firebaseSubjectRef.on('value', function(datasnapshot) {
     for (var i = 0; i < Object.keys(datasnapshot.val()).length; i++) {
@@ -66,7 +65,7 @@ function initializeSelection(){
       $('#subjectSelect').append('<option value="' + subjectId + '">' + subjectId + '</option>');
     }
   });
-}
+
 
 //Initialize bootstrap modal
 $('#subjectModal').on('shown.bs.modal', function() {
