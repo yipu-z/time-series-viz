@@ -1,5 +1,4 @@
 window.onload = function() {
-  firebase.initializeApp(config);
   login();
 };
 
@@ -26,7 +25,7 @@ var config = {
   storageBucket: "gizmo-database.appspot.com",
   messagingSenderId: "1099422978824"
 };
-
+firebase.initializeApp(config);   
 
 // =============================================================================
 // Login (GMAIL)
