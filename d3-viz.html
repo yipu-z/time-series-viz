@@ -72,11 +72,16 @@
         </div>
         <div class="col-sm-6">
           <div id="subjectMarkers" class="alert alert-info">
-            Total Number of Markers: <strong></strong><br>
+            <strong></strong><br>
           </div>
         </div>
       </div>
-      <div class="col-sm-7">
+      <div class="col-sm-2">
+        <div id="exceptionMarkers" class="alert alert-warning">
+          <strong></strong><br>
+        </div>
+      </div>
+      <div class="col-sm-5">
         <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#subjectSelectionModal">
               Select Subject Data
         </button>
@@ -92,8 +97,11 @@
       <div class="col-sm-5">
         <div id="chartContainer" style="height: 300px; width: 100%;"></div>
         <button type="button" id="addMarker" style="display: none" class="btn btn-warning" data-toggle="modal" onclick="addMarker()">
-            Create New Marker
-            </button>
+          Create New Marker
+        </button>
+        <button type="button" id="addExceptionMarker" style="display: none" class="btn btn-info" data-toggle="modal" onclick="addExceptionMarker()">
+          Create New Exception Marker
+        </button>
       </div>
       <div class="col-sm-7 panel panel-default">
         <div align="center" style="height: 300px; width: 100%;" class="embed-responsive embed-responsive-16by9">

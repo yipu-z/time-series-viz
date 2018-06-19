@@ -1,12 +1,14 @@
 //GLOBAL VARIABLES
-var rawInitialTimestamp; // First Timestamp as it comes from db
+var db;
+var rawInitialTimestamp; // First Timestamp as it comes from remote db
 var processedInitialTimestamp; //First Timestamp converted to desired format
-var gsrData; //From db
+var gsrData; //From remote db
 var gsrFirstMarker = []; //Skin conductance data from the first marker onward
 var timestamps = []; //Calculated from first timestamp, at 4hz (.25 seconds)
 var timestampsFirstMarker = []; //Timestamps from the first marker onward
-var markers; //From db
-var processedMarkers = []; //Markers converted to closes value on the timestamp array
+var markers; //Original markers from remote db
+var processedMarkers = []; //Original markers converted to closest value on the timestamp array
+var exceptionMarkers = []; //These markers will be placed to show exceptions such as asking the question again, etc.
 var chartRefresh;
 var currentVideoTime; //Number of the current time the video is set to.
 var videoName; // String to validate the subject is the same in video/GSR data.
@@ -14,24 +16,38 @@ var subjectId; // String to validate the subject is the same in video/GSR data.
 
 // Initialize Firebase
 var config = {
-  apiKey: "AIzaSyAsp1Xn7i2xwWIoyR8RjMHDez5q0_MDPtw",
-  authDomain: "gizmo-database.firebaseapp.com",
-  databaseURL: "https://gizmo-database.firebaseio.com",
-  projectId: "gizmo-database",
-  storageBucket: "gizmo-database.appspot.com",
-  messagingSenderId: "1099422978824"
+  apiKey: 'AIzaSyAsp1Xn7i2xwWIoyR8RjMHDez5q0_MDPtw',
+  authDomain: 'gizmo-database.firebaseapp.com',
+  databaseURL: 'https://gizmo-database.firebaseio.com',
+  projectId: 'gizmo-database',
+  storageBucket: 'gizmo-database.appspot.com',
+  messagingSenderId: '1099422978824'
 };
 firebase.initializeApp(config);
 
 // =============================================================================
 // Read data from DB
 // =============================================================================
-function initializeSelection(){
-  var firebaseSubjectRef = firebase.database().ref();
-  firebaseSubjectRef.on('value', function(datasnapshot) {
-    for (var i = 0; i < Object.keys(datasnapshot.val()).length; i++) {
-      //Add each entry to subject selection
-      var subjectId = Object.keys(datasnapshot.val())[i];
+function initializeSelection() {
+  // ===========================================================================
+  // Alternative 1: read directly from firebase (Deprecated. slow and consumes bandwith.)
+  // ===========================================================================
+  // var firebaseSubjectRef = firebase.database().ref();
+  // firebaseSubjectRef.on('value', function(datasnapshot) {
+  //   for (var i = 0; i < Object.keys(datasnapshot.val()).length; i++) {
+  //     //Add each entry to subject selection
+  //     var subjectId = Object.keys(datasnapshot.val())[i];
+  //     $('#subjectSelect').append('<option value="' + subjectId + '">' + subjectId + '</option>');
+  //   }
+  // });
+  // ===========================================================================
+  // Alternative 2: read from json file exported from firebase.
+  // ===========================================================================
+  $.getJSON("rf_data.json", function(json) {
+    db = json;
+    //Add each entry to subject selection
+    for (var i = 0; i < Object.keys(json).length; i++) {
+      var subjectId = Object.keys(json)[i];
       $('#subjectSelect').append('<option value="' + subjectId + '">' + subjectId + '</option>');
     }
   });
@@ -55,7 +71,7 @@ function login() {
   firebase.auth().onAuthStateChanged(newLoginHappened);
 }
 
-window.onload = function(){
+window.onload = function() {
   login();
 };
 
@@ -68,6 +84,7 @@ function logOut() {
   });
 }
 
+//=============================================================================
 
 //Initialize bootstrap modal
 $('#subjectModal').on('shown.bs.modal', function() {
@@ -77,7 +94,6 @@ $('#subjectModal').on('shown.bs.modal', function() {
 // =============================================================================
 //Upon subject selection, store the selected user data on a variable
 // =============================================================================
-
 $('#select').click(function(event) {
   var selectedSubject = $('#subjectSelect').val();
   subjectId = selectedSubject;
@@ -85,60 +101,114 @@ $('#select').click(function(event) {
   //Display subject number
   $('#subjectId').fadeIn();
   $('#subjectId>strong').html(selectedSubject);
-  //Query subject info from db
-  var selectedSubjectRef = firebase.database().ref().child(selectedSubject);
-  selectedSubjectRef.on('value', function(datasnapshot) {
-    var selectedSubjectData = datasnapshot.val();
-    //Get initial timestamp
-    rawInitialTimestamp = selectedSubjectData.initialTimestamp;
-    //Multiply by 1000 (millisecond resolution, and truncate remaining decimals)
-    processedInitialTimestamp = Math.trunc(rawInitialTimestamp * 1000);
-    //Get and strore gsrData
-    gsrData = selectedSubjectData.gsrData;
-    //Get and store markers
-    markers = selectedSubjectData.userMarkers;
 
-    //Store array of timestamps based on initial timestamp.
-    var currentTimestamp;
-    for (var i = 0; i < gsrData.length; i++) {
-      if (i == 0) {
-        currentTimestamp = processedInitialTimestamp;
-      } else {
-        currentTimestamp = currentTimestamp + 250;
-      }
-      timestamps.push(currentTimestamp);
-    }
-    //Determine closest value on timestamp array, for each marker. Create an array of these values
-    //reset processed markers in case other selections were previously made
-    processedMarkers = [];
-    for (var k = 0; k < markers.length; k++) {
-      var closest = getClosestNum(markers[k], timestamps);
-      processedMarkers.push(closest);
-    }
+  // ===========================================================================
+  // Query subject info from db  (Deprecated. slow and consumes bandwith.)
+  // ===========================================================================
+  // var selectedSubjectRef = firebase.database().ref().child(selectedSubject);
+  // selectedSubjectRef.on('value', function(datasnapshot) {
+  //   var selectedSubjectData = datasnapshot.val();
+  //   //Get initial timestamp
+  //   rawInitialTimestamp = selectedSubjectData.initialTimestamp;
+  //   //Multiply by 1000 (millisecond resolution, and truncate remaining decimals)
+  //   processedInitialTimestamp = Math.trunc(rawInitialTimestamp * 1000);
+  //   //Get and strore gsrData
+  //   gsrData = selectedSubjectData.gsrData;
+  //   //Get and store markers
+  //   markers = selectedSubjectData.userMarkers;
+  //
+  //   //Store array of timestamps based on initial timestamp.
+  //   var currentTimestamp;
+  //   for (var i = 0; i < gsrData.length; i++) {
+  //     if (i == 0) {
+  //       currentTimestamp = processedInitialTimestamp;
+  //     } else {
+  //       currentTimestamp = currentTimestamp + 250;
+  //     }
+  //     timestamps.push(currentTimestamp);
+  //   }
+  //   //Determine closest value on timestamp array, for each marker. Create an array of these values
+  //   //reset processed markers in case other selections were previously made
+  //   processedMarkers = [];
+  //   for (var k = 0; k < markers.length; k++) {
+  //     var closest = getClosestNum(markers[k], timestamps);
+  //     processedMarkers.push(closest);
+  //   }
+  //
+  //   //Show number of markers to corroborate
+  //   $('#subjectMarkers>strong').html('Number of markers: ' + processedMarkers.length);
+  //   //Show 'add marker' button
+  //   $('#addMarker').fadeIn();
+  //   //Remove all gsr values before first marker. Remove timestamps before first marker.
+  //   for (var l = 0; l < gsrData.length; l++) {
+  //     if (timestamps[l] >= processedMarkers[0]) {
+  //       gsrFirstMarker.push(gsrData[l]);
+  //       timestampsFirstMarker.push(timestamps[l]);
+  //     }
+  //   }
+  // });
 
-    //Show number of markers to corroborate
-    $('#subjectMarkers>strong').html('Number of markers: ' + processedMarkers.length);
-    //Show 'add marker' button
-    $('#addMarker').fadeIn();
-    //Remove all gsr values before first marker. Remove timestamps before first marker.
-    for (var l = 0; l < gsrData.length; l++) {
-      if (timestamps[l] >= processedMarkers[0]) {
-        gsrFirstMarker.push(gsrData[l]);
-        timestampsFirstMarker.push(timestamps[l]);
-      }
+  // ===========================================================================
+  // Query subject info from json file.
+  // ===========================================================================
+  var selectedSubjectData = db[selectedSubject];
+  //Get initial timestamp
+  rawInitialTimestamp = selectedSubjectData.initialTimestamp;
+  //Multiply by 1000 (millisecond resolution, and truncate remaining decimals)
+  processedInitialTimestamp = Math.trunc(rawInitialTimestamp * 1000);
+  //Get and strore gsrData
+  gsrData = selectedSubjectData.gsrData;
+  //Get and store markers
+  markers = selectedSubjectData.userMarkers;
+
+  //Store array of timestamps based on initial timestamp.
+  var currentTimestamp;
+  for (var i = 0; i < gsrData.length; i++) {
+    if (i == 0) {
+      currentTimestamp = processedInitialTimestamp;
+    } else {
+      currentTimestamp = currentTimestamp + 250;
     }
-  });
+    timestamps.push(currentTimestamp);
+  }
+  //Determine closest value on timestamp array, for each marker. Create an array of these values
+  //reset processed markers in case other selections were previously made
+  processedMarkers = [];
+  for (var k = 0; k < markers.length; k++) {
+    var closest = getClosestNum(markers[k], timestamps);
+    processedMarkers.push(closest);
+  }
+
+  //Show number of markers to corroborate
+  $('#subjectMarkers>strong').html('Number of markers: ' + processedMarkers.length);
+  $('#exceptionMarkers>strong').html('Exception markers: ' + exceptionMarkers.length);
+  //Show 'add marker' button
+  $('#addMarker').fadeIn();
+  $('#addExceptionMarker').fadeIn();
+  //Remove all gsr values before first marker. Remove timestamps before first marker.
+  for (var l = 0; l < gsrData.length; l++) {
+    if (timestamps[l] >= processedMarkers[0]) {
+      gsrFirstMarker.push(gsrData[l]);
+      timestampsFirstMarker.push(timestamps[l]);
+    }
+  }
 });
 
 // =============================================================================
 // Write to database
 // =============================================================================
-function saveData(){
-  var subjectData={gsrData: gsrData, initialTimestamp: rawInitialTimestamp, userMarkers: processedMarkers};
+function saveData() {
+  var subjectData = {
+    gsrData: gsrData,
+    initialTimestamp: rawInitialTimestamp,
+    userMarkers: processedMarkers,
+    exceptionMarkers: exceptionMarkers
+  };
   if (confirm('Are you sure you want to save the data?')) {
-    firebase.database().ref('edits/'+subjectId).set(subjectData);
-    location.reload();
-  }else {
+    firebase.database().ref('edits/' + subjectId).set(subjectData);
+    //location.reload();
+    console.log(subjectData);
+  } else {
     console.log('canceled');
   }
 
@@ -147,11 +217,11 @@ function saveData(){
 // =============================================================================
 //  Video Navigation
 // =============================================================================
-var vid = document.getElementById("subjectVideo");
+var vid = document.getElementById('subjectVideo');
 vid.onplay = function() {
   //Display subject video tag
   $('#videoId').fadeIn();
-  $('#videoId>strong').html($("#videoSource").attr("src"));
+  $('#videoId>strong').html($('#videoSource').attr('src'));
   var vidTimestamp = getClosestNum((vid.currentTime * 1000) + timestampsFirstMarker[0], timestampsFirstMarker);
   currentVideoTime = vidTimestamp;
   startGsrChart(gsrFirstMarker, timestampsFirstMarker, markers, currentVideoTime);
@@ -190,23 +260,23 @@ function startGsrChart(gsrData, timestamps, markers, currentVideoTime) {
   var dps = [];
 
   //Instantiate chart
-  var chart = new CanvasJS.Chart("chartContainer", {
+  var chart = new CanvasJS.Chart('chartContainer', {
     title: {
-      text: "GSR Data"
+      text: 'GSR Data'
     },
     axisY: {
       includeZero: true,
       interval: 1,
-      title: "µS",
-      yValueFormatString: "###.########"
+      title: 'µS',
+      yValueFormatString: '###.########'
     },
     axisX: {
-      title: "Time",
-      valueFormatString: "hh:mm:ss"
+      title: 'Time',
+      valueFormatString: 'hh:mm:ss'
     },
     data: [{
-      xValueFormatString: "hh:mm:ss",
-      type: "line",
+      xValueFormatString: 'hh:mm:ss',
+      type: 'line',
       dataPoints: dps
     }]
   });
@@ -225,12 +295,12 @@ function startGsrChart(gsrData, timestamps, markers, currentVideoTime) {
       //Initialize object to store each data point.
       var datapoint = {};
       datapoint.y = null;
-      datapoint.x = new Date((currentVideoTime - (datapointsSize * 250))+(i*250));
+      datapoint.x = new Date((currentVideoTime - (datapointsSize * 250)) + (i * 250));
       //Add default values to datapoints
       datapoint.cursor = 'pointer';
       datapoint.originalTimestamp = currentTimestamp - 250;
       dps.push(datapoint);
-      if (i==datapointsSize-1) {
+      if (i == datapointsSize - 1) {
         chart.render();
       }
     }
@@ -244,7 +314,7 @@ function startGsrChart(gsrData, timestamps, markers, currentVideoTime) {
     if (processedMarkers.includes(currentTimestamp)) {
       //Highlight for markers
       datapoint.markerSize = 15;
-      datapoint.markerColor = "red";
+      datapoint.markerColor = 'red';
       //When clicking, show option to remove marker
       datapoint.click = function(e) {
         if (confirm('Do you want to remove this marker?')) {
@@ -252,7 +322,23 @@ function startGsrChart(gsrData, timestamps, markers, currentVideoTime) {
           //Update current number of markers
           $('#subjectMarkers>strong').html('Number of markers: ' + processedMarkers.length);
         } else {
-          console.log('canceled');
+          console.log('delete canceled');
+        }
+      };
+    }
+    //If the timestamp of the current element is present in exception markers, highlight it.
+    if (exceptionMarkers.includes(currentTimestamp)) {
+      //Highlight for markers
+      datapoint.markerSize = 15;
+      datapoint.markerColor = 'green';
+      //When clicking, show option to remove marker
+      datapoint.click = function(e) {
+        if (confirm('Do you want to remove this marker?')) {
+          exceptionMarkers = removeMarker(exceptionMarkers, e.dataPoint.originalTimestamp);
+          //Update current number of exception markers
+          $('#exceptionMarkers>strong').html('Exception markers: ' + exceptionMarkers.length);
+        } else {
+          console.log('delete canceled');
         }
       };
     }
@@ -284,6 +370,13 @@ function addMarker() {
   processedMarkers.push(currentVideoTime);
   //Update current number of markers
   $('#subjectMarkers>strong').html('Number of markers: ' + processedMarkers.length);
+}
+// =============================================================================
+//  Function to add exception markers
+// =============================================================================
+function addExceptionMarker() {
+  exceptionMarkers.push(currentVideoTime);
+  $('#exceptionMarkers>strong').html('Exception markers: ' + exceptionMarkers.length);
 }
 
 // =============================================================================
