@@ -207,9 +207,9 @@ function saveData() {
   if (confirm('Are you sure you want to save the data?')) {
     firebase.database().ref('edits/' + subjectId).set(subjectData, function(error){
       if(error){
-        alert("Data could not be saved." + error);
+        window.alert("Data could not be saved." + error);
       }else{
-        alert("Data saved successfully.");
+        window.alert("Data saved successfully.");
       }
     });
 
